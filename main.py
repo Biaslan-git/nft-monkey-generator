@@ -1,4 +1,4 @@
-import os
+import os, sys
 import random
 
 from PIL import Image
@@ -17,31 +17,43 @@ def choose_random_img(dir_name):
     dir = cur_dir+dir_name
     imgs = os.listdir(dir)
     imgs = [dir+'/'+x for x in imgs ]
+    if dir_name not in [FONS_DIR, MONKEYS_DIR]:
+        imgs += [None]
     return random.choice(imgs)
 
 @snoop()
 def main(iter=1):
-    for i in range(iter):
-        rand_fon = choose_random_img(FONS_DIR)
-        fon = Image.open(rand_fon)
+    for _ in range(iter):
+        layers = []
 
-        rand_monkey = choose_random_img(MONKEYS_DIR)
-        monkey = Image.open(rand_monkey).convert('RGBA')
+        # choose bg
+        fon = choose_random_img(FONS_DIR) 
+        fon = Image.open(fon)
+        # choose monkey
+        monkey = choose_random_img(MONKEYS_DIR)
+        monkey = Image.open(monkey).convert('RGBA')
+        layers.append(monkey)
 
-        rand_kep = choose_random_img(KEPS_DIR)
-        kep = Image.open(rand_kep).convert('RGBA')
+        # Other elements
+        kep = choose_random_img(KEPS_DIR)
+        glasses = choose_random_img(GLASSES_DIR)
+        mask = choose_random_img(MASKS_DIR)
 
-        rand_glasses = choose_random_img(GLASSES_DIR)
-        glasses = Image.open(rand_glasses).convert('RGBA')
+        kep = Image.open(kep).convert('RGBA') if kep else None
+        glasses = Image.open(glasses).convert('RGBA') if glasses else None
+        mask = Image.open(mask).convert('RGBA') if mask else None
 
-        rand_mask = choose_random_img(MASKS_DIR)
-        mask = Image.open(rand_mask).convert('RGBA')
+        layers += [kep, glasses, mask]
 
-        fon.paste(monkey, (0,0), monkey)
-        fon.paste(kep, (0,0), kep)
-        fon.paste(glasses, (0,0), glasses)
-        fon.paste(mask, (0,0), mask)
+        # Clean list from NoneTypes
+        layers = [x for x in layers if x]
+
+        for layer in layers:
+            fon.paste(layer, (0,0), layer)
 
         fon.show()
 
-main()
+if len(sys.argv) > 1 and sys.argv[1].isdigit():
+    main(int(sys.argv[1]))
+else:
+    main()
